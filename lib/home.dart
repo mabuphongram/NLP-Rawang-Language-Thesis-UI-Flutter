@@ -1,5 +1,6 @@
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_swiper_view/flutter_swiper_view.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -24,8 +25,6 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
   bool enabled_segment_word_controller = false;
   bool enabled_pos_tag_controller = false;
 
-  
-
   var output = "";
   var label = "Output";
 
@@ -44,7 +43,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
 
   final List<String> specialCharacters = [
     // Punctuation Marks
-    ',', ':', ';', '!', "'", '"', '-', '_', '(', ')', '[', ']', '{', '}', '/',
+    "'", '"', '-', '_', '(', ')', '[', ']', '{', '}', '/',
     '\\', '|', '#', '%', '@', '&', '*', '+', '=', '<', '>', '^', '~', '`',
     // Currency Symbols
     '\$', '€', '£', '¥', '₹', '¢', '₽', '₩', '₪', '₫', '₭', '₦',
@@ -72,7 +71,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
               .join('\n');
           output = "";
           for (int i = 0; i < _results.length; i++) {
-            output += "${i + 1} ${_results[i].join(', ')}\n";
+            output += "${i + 1} ${_results[i].join(', ')}\n\n";
           }
           label = " Predicted POS Tags ";
         });
@@ -105,7 +104,14 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
   void _removePunctuations() {
     setState(() {
       _stepsResults[3] =
-          _stepsResults[2].replaceAll('.', '').replaceAll('?', '');
+          //',', ':', ';', '!',
+          _stepsResults[2]
+              .replaceAll('.', '')
+              .replaceAll('?', '')
+              .replaceAll(',', '')
+              .replaceAll(';', '')
+              .replaceAll('!', '')
+              .replaceAll(';', '');
       // _isPunctuationRemoved = true; // Mark punctuation as removed
     });
   }
@@ -128,7 +134,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
           output = segments.map((segment) => segment.join(' ')).join('\n');
           _stepsResults[4] = output;
           // Convert each list to a string and join with space, then join lists with '\n'
-          output = segments.map((segment) => segment.join(' / ')).join('\n');
+          output = segments.map((segment) => segment.join(' / ')).join('\n\n');
         });
       } else {
         print('Failed to load predictions: ${response.statusCode}');
@@ -144,11 +150,15 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
   void _segmentSentences() {
     setState(() {
       String text = _controller.text;
+
+      // Replace multiple spaces with a single space
+      text = text.replaceAll(RegExp(r'\s+'), ' ');
+
       _stepsResults[0] = text
           .split(RegExp(r'(?<=[.?\n])'))
           .where((s) => s.trim().isNotEmpty)
           .map((s) => s.trim())
-          .join('\n');
+          .join('\n\n');
     });
   }
 
@@ -168,8 +178,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     segment_sentence_controller.forward();
   }
 
-   init_segment_sentence() {
-  
+  init_segment_sentence() {
     segment_sentence_controller = AnimationController(
         vsync: this, duration: Duration(milliseconds: 1500));
     segment_sentence_controller.addStatusListener((status) {
@@ -255,31 +264,46 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     const colorizeColors = [
-  Colors.black,
-  Colors.blue,
-  Colors.yellow,
-  Colors.pink,
-];
+      Colors.black,
+      Colors.blue,
+      Colors.yellow,
+      Colors.pink,
+    ];
 
-const colorizeTextStyle = TextStyle(
-  fontSize: 28.0,
-  fontWeight: FontWeight.bold,
-  fontFamily: 'Horizon',
-);
+    const colorizeTextStyle = TextStyle(
+      fontSize: 28.0,
+      fontWeight: FontWeight.bold,
+      fontFamily: 'Horizon',
+    );
     return SingleChildScrollView(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.fromLTRB(18, 0, 18, 16),
         child: Column(
           children: [
-            SizedBox(
-              height: 20,
-            ),
+            // SizedBox(
+            //   height: 20,
+            // ),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Image.asset(
-                  'assets/images/hat.png',
-                  width: 120,
+                InkWell(
+                  onTap: () {
+                    setState(() {
+                      _stepsResults = ["", "", "", "", "", ""];
+                      _controller.clear();
+                      output = "";
+                      label = 'Output';
+                      enabled_segment_sentence_controller=true;
+                      enabled_convert_to_lowercase_controller=false;
+                      enabled_remove_special_character_controller=false;
+                      enabled_pos_tag_controller=false;
+                      enabled_segment_word_controller=false;
+                    });
+                  },
+                  child: Image.asset(
+                    'assets/images/hat.png',
+                    width: 120,
+                  ),
                 ),
                 SizedBox(
                   width: 20,
@@ -291,53 +315,139 @@ const colorizeTextStyle = TextStyle(
                       textStyle: colorizeTextStyle,
                       colors: colorizeColors,
                     ),
-                    
                   ],
                   isRepeatingAnimation: true,
                   repeatForever: true,
                 )
               ],
             ),
-          Padding(
-  padding: const EdgeInsets.only(right: 70,bottom: 15,top: 25),
-  child: Row(
-    mainAxisAlignment: MainAxisAlignment.end,
-    children: [
-      Container(
-        width: 900,
-        child: TextField(
-          controller: _controller,
-          decoration: InputDecoration(
-            labelText: 'Enter Rawang Text',
-            labelStyle: TextStyle(
-              color: Colors.lightBlueAccent,
+            Padding(
+              padding: const EdgeInsets.only(right: 15, bottom: 15, top: 25),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Row(
+                    children: [
+                      
+                      Container(
+                        width: MediaQuery.of(context).size.width * 0.85,
+                        child: TextField(
+                          controller: _controller,
+                          decoration: InputDecoration(
+                            labelText: 'Enter Rawang Text',
+                            labelStyle: TextStyle(
+                              fontSize: 17,
+                              color: Colors.lightBlueAccent,
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                  color: Colors.blueAccent, width: 2.0),
+                              borderRadius: BorderRadius.circular(12.0),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                   
+                                  color: Colors.blueAccent, width: 2.0),
+                              borderRadius: BorderRadius.circular(12.0),
+                            ),
+                          ),
+                          style: TextStyle(color: Colors.black, fontSize: 18),
+                        ),
+                      ),
+                      SizedBox(
+                        width: 25 ,
+                      ),
+                                 Stack(
+                                  clipBehavior: Clip.none,
+                        children: [
+                          // Bottom shadow
+                          Positioned(
+                            bottom: -8.0,
+                            right: -8.0,
+                            child: Container(
+                              width: 100.0,
+                              height: 40.0,
+                              decoration: BoxDecoration(
+                                color: Colors.purple,
+                              ),
+                            ),
+                          ),
+                          InkWell(
+                            onTap: (){
+                              setState(() {
+                                _stepsResults = ["","","","","",""];
+                                _controller.clear();
+                                output="";
+                              });
+                            },
+                            child: Container(
+                              width: 100.0,
+                              height: 40.0,
+                              decoration: BoxDecoration(
+                                color: Colors.blue,
+
+                              ),
+                              child: Center(
+                                child: Text(
+                                  'CLEAR', 
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 15.0,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-            enabledBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: Colors.blueAccent, width: 2.0),
-              borderRadius: BorderRadius.circular(12.0),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: Colors.blueAccent, width: 2.0),
-              borderRadius: BorderRadius.circular(12.0),
-            ),
-          ),
-          style: TextStyle(color: Colors.black),
-        ),
-      ),
-    ],
-  ),
-)
-,
             SizedBox(height: 30),
             Row(
               children: [
                 Column(
                   children: [
-                    // Image.asset('assets/images/rawang_flag.jpg',width: 400,height: 100,),
-                    Image.asset(
-                      'assets/images/manaw2.png',
-                      width: MediaQuery.of(context).size.width * 0.35,
+                    //swiper view
+
+                    Container(
+                      width: MediaQuery.of(context).size.width * 0.37,
+                      height: MediaQuery.of(context).size.height * 0.46,
+                      padding: EdgeInsets.all(0),
+                      child:
+                          // Image.asset('assets/images/slide7.jpg')
+
+                          Swiper(
+                              autoplay: true,
+                              autoplayDelay: 8000,
+                              itemBuilder: (context, index) {
+                                return Image.asset(
+                                    'assets/images/slide${index + 1}.jpg');
+                              },
+                              itemCount: 6,
+                              pagination: const SwiperPagination(
+                                builder: DotSwiperPaginationBuilder(
+                                  color: Colors.grey, // Color of dots
+                                  activeColor:
+                                      Colors.white, // Color of active dot
+                                  size: 7.0, // Size of dots
+                                  activeSize: 10.0, // Size of active dot
+                                ),
+                              )
+                              // control: const SwiperControl(),
+                              ),
                     ),
+                    SizedBox(
+                      height: 30,
+                    ),
+
+                    // Image.asset(
+                    //   'assets/images/manaw2.png',
+                    //   width: MediaQuery.of(context).size.width * 0.35,
+                    // ),
                     Container(
                       width: MediaQuery.of(context).size.width * 0.35,
                       child: const Row(
@@ -346,15 +456,20 @@ const colorizeTextStyle = TextStyle(
                           Column(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
-                              Text('Supervised by '),
-                              Text('Dr. Naw Thiri Wai Khin'),
+                              Text('Supervised by',
+                                  style: TextStyle(fontSize: 17.4)),
+                              Text('Dr. Naw Thiri Wai Khin',
+                                  style: TextStyle(fontSize: 17.4)),
                             ],
                           ),
                           Column(
                             children: [
-                              Text('Presented by'),
-                              Text('Mg Mabu Phong (6IST-21)'),
-                              Text('B.E.Thesis'),
+                              Text('Presented by',
+                                  style: TextStyle(fontSize: 17.4)),
+                              Text('Mg Mabu Phong (6IST-21)',
+                                  style: TextStyle(fontSize: 17.4)),
+                              Text('B.E.Thesis',
+                                  style: TextStyle(fontSize: 17.4)),
                             ],
                           ),
                         ],
@@ -362,442 +477,601 @@ const colorizeTextStyle = TextStyle(
                     )
                   ],
                 ),
+                SizedBox(
+                  width: 30,
+                ),
                 Column(
                   children: [
                     enabled_segment_sentence_controller
-                        ? AnimatedBuilder(
-                            animation: segment_sentence_controller,
-                            builder: (context, child) {
-                              return Container(
+                        ? Row(
+                            children: [
+                              AnimatedBuilder(
+                                animation: segment_sentence_controller,
+                                builder: (context, child) {
+                                  return Container(
+                                    width: 250,
+                                    alignment: Alignment.center,
+                                    padding: const EdgeInsets.all(15),
+                                    decoration: BoxDecoration(
+                                        gradient: LinearGradient(colors: const [
+                                          Colors.purple,
+                                          Colors.purpleAccent,
+                                          Colors.blue,
+                                        ], stops: [
+                                          0.0,
+                                          segment_sentence_controller.value,
+                                          1.0
+                                        ]),
+                                        borderRadius:
+                                            BorderRadius.circular(20)),
+                                    child: DefaultTextStyle(
+                                      style: const TextStyle(
+                                        fontSize: 20.0,
+                                      ),
+                                      child: AnimatedTextKit(
+                                        repeatForever: true,
+                                        animatedTexts: [
+                                          WavyAnimatedText('Segment Sentences',
+                                              textStyle: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 17.5,
+                                                  fontWeight: FontWeight.bold)),
+                                        ],
+                                        isRepeatingAnimation: true,
+                                        onTap: () {
+                                          // if text filed is empty
+                                          if (_controller.text.isEmpty) {
+                                            showDialog(
+                                              context: context,
+                                              builder: (BuildContext context) {
+                                                return AlertDialog(
+                                                  title: Text('Input Error'),
+                                                  content: Text(
+                                                      ' Input Text is Empty! Please Enter Rawang Text.'),
+                                                  actions: [
+                                                    TextButton(
+                                                      onPressed: () {
+                                                        Navigator.of(context)
+                                                            .pop();
+                                                      },
+                                                      child: Text('OK'),
+                                                    ),
+                                                  ],
+                                                );
+                                              },
+                                            );
+                                          } else {
+                                            setState(() {
+                                              _segmentSentences();
+                                              output = '${_stepsResults[0]}';
+                                              label = ' Segmented Sentences ';
+                                              enabled_remove_special_character_controller =
+                                                  true;
+                                              enabled_segment_sentence_controller =
+                                                  false;
+                                            });
+                                            init_remove_special_character();
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                              SizedBox(
+                                width: 50,
+                              )
+                            ],
+                          )
+                        : Row(
+                            children: [
+                              Container(
                                 width: 250,
                                 alignment: Alignment.center,
-                                padding: const EdgeInsets.all(15),
+                                padding: EdgeInsets.all(15),
                                 decoration: BoxDecoration(
-                                    gradient: LinearGradient(colors: const [
-                                      Colors.purple,
-                                      Colors.purpleAccent,
-                                      Colors.blue,
-                                    ], stops: [
-                                      0.0,
-                                      segment_sentence_controller.value,
-                                      1.0
-                                    ]),
-                                    borderRadius: BorderRadius.circular(20)),
-                                child: DefaultTextStyle(
-                                  style: const TextStyle(
-                                    fontSize: 20.0,
-                                  ),
-                                  child: AnimatedTextKit(
-                                    repeatForever: true,
-                                    animatedTexts: [
-                                      WavyAnimatedText('Segment Sentences',
-                                          textStyle: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold)),
-                                    ],
-                                    isRepeatingAnimation: true,
-                                    onTap: () {
-                                      setState(() {
-                                        _segmentSentences();
-                                        output = '${_stepsResults[0]}';
-                                        label = ' Segmented Sentences ';
-                                        enabled_remove_special_character_controller =
-                                            true;
-                                        enabled_segment_sentence_controller =
-                                            false;
-                                      });
-                                      init_remove_special_character();
-                                    },
-                                  ),
+                                  gradient: LinearGradient(colors: [
+                                    Colors.purple,
+                                    Colors.purpleAccent,
+                                    Colors.blue,
+                                  ]),
+                                  borderRadius: BorderRadius.circular(20),
                                 ),
-                              );
-                            },
-                          )
-                        : Container(
-                            width: 250,
-                            alignment: Alignment.center,
-                            padding: EdgeInsets.all(15),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(colors: [
-                                Colors.purple,
-                                Colors.purpleAccent,
-                                Colors.blue,
-                              ]),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text('Segment Sentences',
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold)),
+                                child: Text('Segment Sentences',
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 17.5,
+                                        fontWeight: FontWeight.bold)),
+                              ),
+                              _stepsResults[0].isEmpty
+                                  ? SizedBox(
+                                      width: 50,
+                                    )
+                                  : Image.asset(
+                                      'assets/images/file.png',
+                                      width: 50,
+                                    )
+                            ],
                           ),
                     // if (_stepsResults[0].isNotEmpty)
                     //   Text(' ${_stepsResults[0]}'),
                     SizedBox(height: 20),
                     enabled_remove_special_character_controller
-                        ? AnimatedBuilder(
-                            animation: remove_speical_character_controller,
-                            builder: (context, child) {
-                              return Container(
+                        ? Row(
+                            children: [
+                              AnimatedBuilder(
+                                animation: remove_speical_character_controller,
+                                builder: (context, child) {
+                                  return Container(
+                                    width: 250,
+                                    alignment: Alignment.center,
+                                    padding: EdgeInsets.all(15),
+                                    decoration: BoxDecoration(
+                                        gradient: LinearGradient(colors: [
+                                          Colors.purple,
+                                          Colors.purpleAccent,
+                                          Colors.blue,
+                                        ], stops: [
+                                          0.0,
+                                          remove_speical_character_controller
+                                              .value,
+                                          1.0
+                                        ]),
+                                        borderRadius:
+                                            BorderRadius.circular(20)),
+                                    child: DefaultTextStyle(
+                                      style: const TextStyle(
+                                        fontSize: 20.0,
+                                      ),
+                                      child: AnimatedTextKit(
+                                        repeatForever: true,
+                                        animatedTexts: [
+                                          WavyAnimatedText(
+                                              'Remove Special Characters',
+                                              textStyle: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 17.5,
+                                                  fontWeight: FontWeight.bold)),
+                                        ],
+                                        isRepeatingAnimation: true,
+                                        onTap: () {
+                                          setState(() {
+                                            _removeSpecialCharacters();
+                                            output = _stepsResults[1];
+                                            label =
+                                                ' Removed Special Characters ';
+                                            enabled_convert_to_lowercase_controller =
+                                                true;
+                                            enabled_remove_special_character_controller =
+                                                false;
+                                          });
+                                          init_convert_to_lowercase();
+                                        },
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                              SizedBox(
+                                width: 50,
+                              )
+                            ],
+                          )
+                        : Row(
+                            children: [
+                              Container(
                                 width: 250,
                                 alignment: Alignment.center,
                                 padding: EdgeInsets.all(15),
                                 decoration: BoxDecoration(
-                                    gradient: LinearGradient(colors: [
-                                      Colors.purple,
-                                      Colors.purpleAccent,
-                                      Colors.blue,
-                                    ], stops: [
-                                      0.0,
-                                      remove_speical_character_controller.value,
-                                      1.0
-                                    ]),
-                                    borderRadius: BorderRadius.circular(20)),
-                                child: DefaultTextStyle(
-                                  style: const TextStyle(
-                                    fontSize: 20.0,
-                                  ),
-                                  child: AnimatedTextKit(
-                                    repeatForever: true,
-                                    animatedTexts: [
-                                      WavyAnimatedText(
-                                          'Remove Special Characters',
-                                          textStyle: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold)),
-                                    ],
-                                    isRepeatingAnimation: true,
-                                    onTap: () {
-                                      setState(() {
-                                        _removeSpecialCharacters();
-                                        output = _stepsResults[1];
-                                        label = ' Removed Special Characters ';
-                                        enabled_convert_to_lowercase_controller =
-                                            true;
-                                        enabled_remove_special_character_controller =
-                                            false;
-                                      });
-                                      init_convert_to_lowercase();
-                                    },
-                                  ),
+                                  gradient: LinearGradient(colors: [
+                                    Colors.purple,
+                                    Colors.purpleAccent,
+                                    Colors.blue,
+                                  ]),
+                                  borderRadius: BorderRadius.circular(20),
                                 ),
-                              );
-                            },
-                          )
-                        : Container(
-                            width: 250,
-                            alignment: Alignment.center,
-                            padding: EdgeInsets.all(15),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(colors: [
-                                Colors.purple,
-                                Colors.purpleAccent,
-                                Colors.blue,
-                              ]),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text('Remove Special Characters',
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold)),
+                                child: Text('Remove Special Characters',
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 17.5,
+                                        fontWeight: FontWeight.bold)),
+                              ),
+                              _stepsResults[1].isEmpty
+                                  ? SizedBox(
+                                      width: 50,
+                                    )
+                                  : Image.asset(
+                                      'assets/images/file.png',
+                                      width: 50,
+                                    )
+                            ],
                           ),
                     // if (_stepsResults[1].isNotEmpty)
                     //   Text(' ${_stepsResults[1]}'),
                     SizedBox(height: 20),
                     enabled_convert_to_lowercase_controller
-                        ? AnimatedBuilder(
-                            animation: remove_speical_character_controller,
-                            builder: (context, child) {
-                              return Container(
+                        ? Row(
+                            children: [
+                              AnimatedBuilder(
+                                animation: remove_speical_character_controller,
+                                builder: (context, child) {
+                                  return Container(
+                                    width: 250,
+                                    alignment: Alignment.center,
+                                    padding: EdgeInsets.all(15),
+                                    decoration: BoxDecoration(
+                                        gradient: LinearGradient(colors: [
+                                          Colors.purple,
+                                          Colors.purpleAccent,
+                                          Colors.blue,
+                                        ], stops: [
+                                          0.0,
+                                          remove_speical_character_controller
+                                              .value,
+                                          1.0
+                                        ]),
+                                        borderRadius:
+                                            BorderRadius.circular(20)),
+                                    child: DefaultTextStyle(
+                                      style: const TextStyle(
+                                        fontSize: 20.0,
+                                      ),
+                                      child: AnimatedTextKit(
+                                        repeatForever: true,
+                                        animatedTexts: [
+                                          WavyAnimatedText(
+                                              'Convert to Lowercase',
+                                              textStyle: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 17.5,
+                                                  fontWeight: FontWeight.bold)),
+                                        ],
+                                        isRepeatingAnimation: true,
+                                        onTap: () {
+                                          setState(() {
+                                            _convertToLowerCase();
+                                            output = _stepsResults[2];
+                                            label = " Converted to Lowercase ";
+                                            enabled_remove_punctuation_controller =
+                                                true;
+                                            enabled_convert_to_lowercase_controller =
+                                                false;
+                                          });
+                                          init_remove_punctuation();
+                                        },
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                              SizedBox(
+                                width: 50,
+                              )
+                            ],
+                          )
+                        : Row(
+                            children: [
+                              Container(
                                 width: 250,
                                 alignment: Alignment.center,
                                 padding: EdgeInsets.all(15),
                                 decoration: BoxDecoration(
-                                    gradient: LinearGradient(colors: [
-                                      Colors.purple,
-                                      Colors.purpleAccent,
-                                      Colors.blue,
-                                    ], stops: [
-                                      0.0,
-                                      remove_speical_character_controller.value,
-                                      1.0
-                                    ]),
-                                    borderRadius: BorderRadius.circular(20)),
-                                child: DefaultTextStyle(
-                                  style: const TextStyle(
-                                    fontSize: 20.0,
-                                  ),
-                                  child: AnimatedTextKit(
-                                    repeatForever: true,
-                                    animatedTexts: [
-                                      WavyAnimatedText('Convert to Lowercase',
-                                          textStyle: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold)),
-                                    ],
-                                    isRepeatingAnimation: true,
-                                    onTap: () {
-                                      setState(() {
-                                        _convertToLowerCase();
-                                        output = _stepsResults[2];
-                                        label = " Converted to Lowercase ";
-                                        enabled_remove_punctuation_controller =
-                                            true;
-                                        enabled_convert_to_lowercase_controller =
-                                            false;
-                                      });
-                                      init_remove_punctuation();
-                                    },
-                                  ),
+                                  gradient: LinearGradient(colors: [
+                                    Colors.purple,
+                                    Colors.purpleAccent,
+                                    Colors.blue,
+                                  ]),
+                                  borderRadius: BorderRadius.circular(20),
                                 ),
-                              );
-                            },
-                          )
-                        : Container(
-                            width: 250,
-                            alignment: Alignment.center,
-                            padding: EdgeInsets.all(15),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(colors: [
-                                Colors.purple,
-                                Colors.purpleAccent,
-                                Colors.blue,
-                              ]),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text('Convert to Lowercase',
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold)),
+                                child: Text('Convert to Lowercase',
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 17.5,
+                                        fontWeight: FontWeight.bold)),
+                              ),
+                              _stepsResults[2].isEmpty
+                                  ? SizedBox(
+                                      width: 50,
+                                    )
+                                  : Image.asset(
+                                      'assets/images/file.png',
+                                      width: 50,
+                                    )
+                            ],
                           ),
                     // if (_stepsResults[2].isNotEmpty)
                     //   Text(' ${_stepsResults[2]}'),
                     SizedBox(height: 20),
                     enabled_remove_punctuation_controller
-                        ? AnimatedBuilder(
-                            animation: remove_speical_character_controller,
-                            builder: (context, child) {
-                              return Container(
+                        ? Row(
+                            children: [
+                              AnimatedBuilder(
+                                animation: remove_speical_character_controller,
+                                builder: (context, child) {
+                                  return Container(
+                                    width: 250,
+                                    alignment: Alignment.center,
+                                    padding: EdgeInsets.all(15),
+                                    decoration: BoxDecoration(
+                                        gradient: LinearGradient(colors: [
+                                          Colors.purple,
+                                          Colors.purpleAccent,
+                                          Colors.blue,
+                                        ], stops: [
+                                          0.0,
+                                          remove_punctuation_controller.value,
+                                          1.0
+                                        ]),
+                                        borderRadius:
+                                            BorderRadius.circular(20)),
+                                    child: DefaultTextStyle(
+                                      style: const TextStyle(
+                                        fontSize: 20.0,
+                                      ),
+                                      child: AnimatedTextKit(
+                                        repeatForever: true,
+                                        animatedTexts: [
+                                          WavyAnimatedText(
+                                              'Remove Punctuations',
+                                              textStyle: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 17.5,
+                                                  fontWeight: FontWeight.bold)),
+                                        ],
+                                        isRepeatingAnimation: true,
+                                        onTap: () {
+                                          _removePunctuations();
+                                          setState(() {
+                                            output = _stepsResults[3];
+                                            label = " Removed Punctuations ";
+                                            enabled_segment_word_controller =
+                                                true;
+                                            enabled_remove_punctuation_controller =
+                                                false;
+                                          });
+                                          init_segment_word();
+                                        },
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                              SizedBox(
+                                width: 50,
+                              )
+                            ],
+                          )
+                        : Row(
+                            children: [
+                              Container(
                                 width: 250,
                                 alignment: Alignment.center,
                                 padding: EdgeInsets.all(15),
                                 decoration: BoxDecoration(
-                                    gradient: LinearGradient(colors: [
-                                      Colors.purple,
-                                      Colors.purpleAccent,
-                                      Colors.blue,
-                                    ], stops: [
-                                      0.0,
-                                      remove_punctuation_controller.value,
-                                      1.0
-                                    ]),
-                                    borderRadius: BorderRadius.circular(20)),
-                                child: DefaultTextStyle(
-                                  style: const TextStyle(
-                                    fontSize: 20.0,
-                                  ),
-                                  child: AnimatedTextKit(
-                                    repeatForever: true,
-                                    animatedTexts: [
-                                      WavyAnimatedText('Remove Punctuations',
-                                          textStyle: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold)),
-                                    ],
-                                    isRepeatingAnimation: true,
-                                    onTap: () {
-                                      _removePunctuations();
-                                      setState(() {
-                                        output = _stepsResults[3];
-                                        label = " Removed Punctuations ";
-                                        enabled_segment_word_controller = true;
-                                        enabled_remove_punctuation_controller =
-                                            false;
-                                      });
-                                      init_segment_word();
-                                    },
-                                  ),
+                                  gradient: LinearGradient(colors: [
+                                    Colors.purple,
+                                    Colors.purpleAccent,
+                                    Colors.blue,
+                                  ]),
+                                  borderRadius: BorderRadius.circular(20),
                                 ),
-                              );
-                            },
-                          )
-                        : Container(
-                            width: 250,
-                            alignment: Alignment.center,
-                            padding: EdgeInsets.all(15),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(colors: [
-                                Colors.purple,
-                                Colors.purpleAccent,
-                                Colors.blue,
-                              ]),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text('Remove Punctuations',
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold)),
+                                child: Text('Remove Punctuations',
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 17.5,
+                                        fontWeight: FontWeight.bold)),
+                              ),
+                              _stepsResults[3].isEmpty
+                                  ? SizedBox(
+                                      width: 50,
+                                    )
+                                  : Image.asset(
+                                      'assets/images/file.png',
+                                      width: 50,
+                                    )
+                            ],
                           ),
                     // if (_stepsResults[3].isNotEmpty)
                     //   Text(' ${_stepsResults[3]}'),
                     SizedBox(height: 20),
                     enabled_segment_word_controller
-                        ? AnimatedBuilder(
-                            animation: remove_speical_character_controller,
-                            builder: (context, child) {
-                              return Container(
+                        ? Row(
+                            children: [
+                              AnimatedBuilder(
+                                animation: remove_speical_character_controller,
+                                builder: (context, child) {
+                                  return Container(
+                                    width: 250,
+                                    alignment: Alignment.center,
+                                    padding: EdgeInsets.all(15),
+                                    decoration: BoxDecoration(
+                                        gradient: LinearGradient(colors: [
+                                          Colors.purple,
+                                          Colors.purpleAccent,
+                                          Colors.blue,
+                                        ], stops: [
+                                          0.0,
+                                          segment_word_controller.value,
+                                          1.0
+                                        ]),
+                                        borderRadius:
+                                            BorderRadius.circular(20)),
+                                    child: DefaultTextStyle(
+                                      style: const TextStyle(
+                                        fontSize: 20.0,
+                                      ),
+                                      child: AnimatedTextKit(
+                                        repeatForever: true,
+                                        animatedTexts: [
+                                          WavyAnimatedText('Segment Words',
+                                              textStyle: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 17.5,
+                                                  fontWeight: FontWeight.bold)),
+                                        ],
+                                        isRepeatingAnimation: true,
+                                        onTap: () async {
+                                          setState(() {
+                                            label = "Segmenting....";
+                                          });
+                                          await Future.delayed(
+                                              Duration(seconds: 3));
+                                          _segmentWords();
+                                          setState(() {
+                                            output = _stepsResults[4];
+                                            label = " Segmented Words ";
+                                            enabled_pos_tag_controller = true;
+                                            enabled_segment_word_controller =
+                                                false;
+                                          });
+                                          init_pos_tag();
+                                        },
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                              SizedBox(
+                                width: 50,
+                              )
+                            ],
+                          )
+                        : Row(
+                            children: [
+                              Container(
                                 width: 250,
                                 alignment: Alignment.center,
                                 padding: EdgeInsets.all(15),
                                 decoration: BoxDecoration(
-                                    gradient: LinearGradient(colors: [
-                                      Colors.purple,
-                                      Colors.purpleAccent,
-                                      Colors.blue,
-                                    ], stops: [
-                                      0.0,
-                                      segment_word_controller.value,
-                                      1.0
-                                    ]),
-                                    borderRadius: BorderRadius.circular(20)),
-                                child: DefaultTextStyle(
-                                  style: const TextStyle(
-                                    fontSize: 20.0,
-                                  ),
-                                  child: AnimatedTextKit(
-                                    repeatForever: true,
-                                    animatedTexts: [
-                                      WavyAnimatedText('Segment Words',
-                                          textStyle: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold)),
-                                    ],
-                                    isRepeatingAnimation: true,
-                                    onTap: () {
-                                      _segmentWords();
-                                      setState(() {
-                                        output = _stepsResults[4];
-                                        label = " Segmented Words ";
-                                        enabled_pos_tag_controller = true;
-                                        enabled_segment_word_controller = false;
-                                      });
-                                      init_pos_tag();
-                                    },
-                                  ),
+                                  gradient: LinearGradient(colors: [
+                                    Colors.purple,
+                                    Colors.purpleAccent,
+                                    Colors.blue,
+                                  ]),
+                                  borderRadius: BorderRadius.circular(20),
                                 ),
-                              );
-                            },
-                          )
-                        : Container(
-                            width: 250,
-                            alignment: Alignment.center,
-                            padding: EdgeInsets.all(15),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(colors: [
-                                Colors.purple,
-                                Colors.purpleAccent,
-                                Colors.blue,
-                              ]),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text('Segment Words',
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold)),
+                                child: Text('Segment Words',
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 17.5,
+                                        fontWeight: FontWeight.bold)),
+                              ),
+                              _stepsResults[4].isEmpty
+                                  ? SizedBox(
+                                      width: 50,
+                                    )
+                                  : Image.asset(
+                                      'assets/images/file.png',
+                                      width: 50,
+                                    )
+                            ],
                           ),
                     // if (_stepsResults[4].isNotEmpty)
                     //   Text(' ${_stepsResults[4]}'),
                     SizedBox(height: 20),
                     enabled_pos_tag_controller
-                        ? AnimatedBuilder(
-                            animation: remove_speical_character_controller,
-                            builder: (context, child) {
-                              return Container(
+                        ? Row(
+                            children: [
+                              AnimatedBuilder(
+                                animation: remove_speical_character_controller,
+                                builder: (context, child) {
+                                  return Container(
+                                    width: 250,
+                                    alignment: Alignment.center,
+                                    padding: EdgeInsets.all(15),
+                                    decoration: BoxDecoration(
+                                        gradient: LinearGradient(colors: [
+                                          Colors.purple,
+                                          Colors.purpleAccent,
+                                          Colors.blue,
+                                        ], stops: [
+                                          0.0,
+                                          pos_tag_controller.value,
+                                          1.0
+                                        ]),
+                                        borderRadius:
+                                            BorderRadius.circular(20)),
+                                    child: DefaultTextStyle(
+                                      style: const TextStyle(
+                                        fontSize: 20.0,
+                                      ),
+                                      child: AnimatedTextKit(
+                                        repeatForever: true,
+                                        animatedTexts: [
+                                          WavyAnimatedText('Predict POS Tags',
+                                              textStyle: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 17.5,
+                                                  fontWeight: FontWeight.bold)),
+                                        ],
+                                        isRepeatingAnimation: true,
+                                        onTap: () async {
+                                          // Update the output variable with the results
+                                          setState(() {
+                                            label = "Predicting....";
+                                          });
+                                          await Future.delayed(
+                                              Duration(seconds: 4));
+                                          _predictPOS();
+                                          setState(() {
+                                            // enabled_segment_sentence_controller =
+                                            //     true;
+                                            enabled_pos_tag_controller = false;
+                                          });
+                                          init_segment_sentence();
+                                        },
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                              SizedBox(
+                                width: 50,
+                              )
+                            ],
+                          )
+                        : Row(
+                            children: [
+                              Container(
                                 width: 250,
                                 alignment: Alignment.center,
                                 padding: EdgeInsets.all(15),
                                 decoration: BoxDecoration(
-                                    gradient: LinearGradient(colors: [
-                                      Colors.purple,
-                                      Colors.purpleAccent,
-                                      Colors.blue,
-                                    ], stops: [
-                                      0.0,
-                                      pos_tag_controller.value,
-                                      1.0
-                                    ]),
-                                    borderRadius: BorderRadius.circular(20)),
-                                child: DefaultTextStyle(
-                                  style: const TextStyle(
-                                    fontSize: 20.0,
-                                  ),
-                                  child: AnimatedTextKit(
-                                    repeatForever: true,
-                                    animatedTexts: [
-                                      WavyAnimatedText('Predict POS Tags',
-                                          textStyle: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold)),
-                                    ],
-                                    isRepeatingAnimation: true,
-                                    onTap: () async {
-                                      // Update the output variable with the results
-                                      setState(() {
-                                        label = "Predicting....";
-                                      });
-                                      await Future.delayed(
-                                          Duration(seconds: 4));
-                                      _predictPOS();
-                                      setState(() {
-                                        enabled_segment_sentence_controller = true;
-                                        enabled_pos_tag_controller = false;
-                                      });
-                                      init_segment_sentence();
-                                    },
-                                  ),
+                                  gradient: LinearGradient(colors: [
+                                    Colors.purple,
+                                    Colors.purpleAccent,
+                                    Colors.blue,
+                                  ]),
+                                  borderRadius: BorderRadius.circular(20),
                                 ),
-                              );
-                            },
-                          )
-                        : Container(
-                            width: 250,
-                            alignment: Alignment.center,
-                            padding: EdgeInsets.all(15),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(colors: [
-                                Colors.purple,
-                                Colors.purpleAccent,
-                                Colors.blue,
-                              ]),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text('Predict POS Tags',
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold)),
+                                child: Text('Predict POS Tags',
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 17.5,
+                                        fontWeight: FontWeight.bold)),
+                              ),
+                              _stepsResults[5].isEmpty
+                                  ? SizedBox(
+                                      width: 50,
+                                    )
+                                  : Image.asset(
+                                      'assets/images/file.png',
+                                      width: 50,
+                                    )
+                            ],
                           ),
                   ],
                 ),
                 SizedBox(
-                  width: 30,
+                  width: 11,
                 ),
                 Expanded(
                   child: Stack(
                     clipBehavior: Clip.none,
                     children: [
                       Container(
-                        height: MediaQuery.of(context).size.height * 0.58,
+                        height: MediaQuery.of(context).size.height * 0.63,
                         width: MediaQuery.of(context).size.width * 0.4,
                         padding: EdgeInsets.fromLTRB(15, 28, 5, 5),
                         decoration: BoxDecoration(
@@ -809,10 +1083,12 @@ const colorizeTextStyle = TextStyle(
                           borderRadius:
                               BorderRadius.circular(10), // rounded corners
                         ),
-                        child: Text(
-                          output,
-                          style: TextStyle(
-                              letterSpacing: 1, wordSpacing: 1, fontSize: 20),
+                        child: SingleChildScrollView(
+                          child: Text(
+                            output,
+                            style: TextStyle(
+                                letterSpacing: 1, wordSpacing: 1, fontSize: 20),
+                          ),
                         ),
                       ),
                       Positioned(
@@ -826,21 +1102,19 @@ const colorizeTextStyle = TextStyle(
                           child: Padding(
                             padding: const EdgeInsets.fromLTRB(20, 5, 20, 5),
                             child: Text(
+                              textAlign: TextAlign.justify,
                               label,
                               style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 1,
                                   color: Colors.white,
-                                  fontSize: 16),
+                                  fontSize: 15),
                             ),
                           ),
                         ),
                       )
                     ],
                   ),
-                ),
-                SizedBox(
-                  width: 20,
                 ),
               ],
             ),
