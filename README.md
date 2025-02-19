@@ -10,4 +10,4 @@ Backend - Python(Flask)
 ![image_alt](https://github.com/mabuphongram/NLP-Rawang-Language-Thesis-UI-Flutter/blob/8baea65b0a571a932f9e598f7f5cadaea51f2662/Screenshot%202024-08-31%20134151.png)
 
 # Final POS tagging output 
-![image_alt](https://github.com/mabuphongram/NLP-Rawang-Language-Thesis-UI-Flutter/blob/8baea65b0a571a932f9e598f7f5cadaea51f2662/Screenshot%202024-08-31%20134151.png)
+![image_alt](https://github.com/mabuphongram/NLP-Rawang-Language-Thesis-UI-Flutter/blob/9d28446ea122c5eb7e5e02d96d3851cb24627aa0/Screenshot%202024-08-31%20135133.png)
